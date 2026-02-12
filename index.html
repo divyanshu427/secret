@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Our Memories 💌</title>
+  <style>
+    :root{
+      --bg1:#fff1f5;
+      --bg2:#ffe4ef;
+      --card:#ffffffcc;
+      --text:#2b1b22;
+      --accent:#ff3b7a;
+      --muted:#6b7280;
+      --shadow: 0 18px 60px rgba(0,0,0,.12);
+      --radius: 24px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 20% 10%, var(--bg2), transparent 60%),
+        radial-gradient(900px 700px at 80% 90%, var(--bg2), transparent 55%),
+        linear-gradient(135deg, var(--bg1), #fff);
+      overflow:hidden;
+    }
+
+    /* Floating balloons layer */
+    .sky{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+
+    /* Balloon with DS text */
+    .balloon{
+      position:absolute;
+      width:56px;
+      height:72px;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,.15));
+      opacity:.95;
+      animation: drift linear infinite;
+    }
+    .balloon .shape{
+      position:absolute;
+      inset:0;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,255,255,.55), transparent 40%),
+        linear-gradient(135deg, #ff2d6d, #ff7aa2);
+      border: 1px solid rgba(255,255,255,.35);
+    }
+    .balloon .ds{
+      position:absolute;
+      top:18px;
+      left:50%;
+      transform:translateX(-50%);
+      font-weight:900;
+      letter-spacing:.6px;
+      font-size:18px;
+      color: rgba(255,255,255,.92);
+      text-shadow: 0 2px 10px rgba(0,0,0,.18);
+      user-select:none;
+    }
+    .balloon .string{
+      position:absolute;
+      left:50%;
+      top:68px;
+      width:2px;
+      height:110px;
+      background: rgba(0,0,0,.14);
+      transform: translateX(-50%);
+      border-radius:2px;
+    }
+
+    @keyframes drift{
+      from { transform: translate(var(--x0), var(--y0)) scale(var(--s)); }
+      to   { transform: translate(var(--x1), var(--y1)) scale(var(--s)); }
+    }
+
+    .wrap{
+      width:min(760px, 92vw);
+      padding: clamp(16px, 3.5vw, 26px);
+      position:relative;
+      z-index:2;
+    }
+
+    .card{
+      padding: clamp(18px, 4vw, 32px);
+      background: var(--card);
+      border:1px solid rgba(255,255,255,.75);
+      backdrop-filter: blur(10px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size: clamp(24px, 5.2vw, 44px);
+      letter-spacing:.2px;
+      line-height:1.08;
+    }
+    .subtitle{
+      margin:0 0 18px;
+      font-size: clamp(14px, 2.4vw, 18px);
+      color: rgba(43,27,34,.85);
+      line-height:1.4;
+    }
+
+    .panel{
+      text-align:left;
+      margin: 14px auto 0;
+      max-width: 640px;
+      padding: 14px 14px;
+      border-radius: 18px;
+      background: rgba(255,59,122,.08);
+      border: 1px solid rgba(255,59,122,.14);
+      line-height:1.55;
+      font-size: clamp(15px, 2.35vw, 18px);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .panel .title{
+      display:block;
+      font-weight:900;
+      font-size: clamp(17px, 2.7vw, 22px);
+      margin-bottom: 8px;
+      color: rgba(43,27,34,.95);
+    }
+
+    /* Base button styles */
+    button{
+      border:none;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(0,0,0,.12);
+      transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    button:active{ transform: translateY(1px) scale(.99); }
+
+    .primary{
+      background: linear-gradient(135deg, #ff2d6d, #ff6aa3);
+      color:white;
+    }
+    .primary:hover{ filter: brightness(1.03); }
+
+    /* YES + NO-ZONE layout (prevents overlap on mobile) */
+    .buttonsRow.choice{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
+      flex-wrap:nowrap;
+      margin-top: 16px;
+    }
+
+    .noZone{
+      position:relative;
+      width: 200px;     /* desktop */
+      height: 56px;
+      flex: 0 0 auto;
+    }
+
+    /* NO button moves only inside noZone */
+    .noBtn{
+      background: rgba(107,114,128,.12);
+      color:#374151;
+      border: 1px solid rgba(107,114,128,.25);
+      position:absolute;
+      left: 0;
+      top: 0;
+      transform:none; /* important */
+    }
+
+    .navRow{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      margin-top: 14px;
+      flex-wrap:wrap;
+    }
+
+    .ghost{
+      background: rgba(255,255,255,.7);
+      border: 1px solid rgba(0,0,0,.08);
+      color:#111827;
+    }
+    .ghost:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .progress{
+      margin-top: 14px;
+      font-size: 12px;
+      color: rgba(0,0,0,.55);
+    }
+
+    .finalBlock{
+      display:none;
+      margin-top: 16px;
+      padding: 16px 14px;
+      border-radius: 18px;
+      background: rgba(255,59,122,.10);
+      border: 1px solid rgba(255,59,122,.18);
+      text-align:center;
+    }
+    .finalBlock .big{
+      font-weight: 900;
+      font-size: clamp(18px, 2.9vw, 22px);
+      margin-bottom: 10px;
+      display:block;
+    }
+    .finalMsg{
+      font-size: clamp(15px, 2.4vw, 18px);
+      line-height:1.5;
+    }
+
+    .imgWrap{
+      margin-top: 12px;
+      display:grid;
+      place-items:center;
+    }
+
+    /* Responsive image (fits viewport on mobile) */
+    .imgWrap img{
+      width: 100%;
+      max-width: 520px;
+      height: auto;
+      max-height: 54vh;
+      object-fit: cover;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 12px 30px rgba(0,0,0,.10);
+      background: rgba(255,255,255,.7);
+    }
+
+    .hearts{
+      margin-top: 10px;
+      font-size: 22px;
+      letter-spacing: 2px;
+      animation: floatHearts 2.2s infinite ease-in-out;
+    }
+    @keyframes floatHearts{
+      0%,100%{ transform: translateY(0); }
+      50%{ transform: translateY(-6px); }
+    }
+
+    /* Mobile: stack YES and NO-zone vertically */
+    @media (max-width: 420px){
+  .buttonsRow.choice{
+    flex-direction:column;
+    gap:10px;
+  }
+
+  /* YES stays big */
+  .buttonsRow.choice .primary{
+    width: min(86vw, 280px);
+  }
+
+  /* NO playground stays wide so movement is visible */
+  .noZone{
+    width: min(86vw, 280px);
+    height: 62px; /* a bit taller for nicer movement */
+  }
+
+  /* NO becomes smaller (but still clickable) */
+  .noBtn{
+    width: 140px;
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 14px;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="sky" id="sky"></div>
+
+  <div class="wrap">
+    <main class="card" id="card">
+      <h1 id="headline">💌 A Journey Through Our Memories</h1>
+      <p class="subtitle" id="subtitle">Will you take this walk back in time with me?</p>
+
+      <div class="panel" id="panel" style="display:none;"></div>
+
+      <!-- Start Yes/No (No dodges INSIDE its own zone) -->
+      <div class="buttonsRow choice" id="startChoice">
+        <button class="primary" id="startYes">YES 💖</button>
+        <div class="noZone" id="startNoZone">
+          <button class="noBtn" id="startNo">NO 🙃</button>
+        </div>
+      </div>
+
+      <!-- Slideshow navigation -->
+      <div class="navRow" id="navRow" style="display:none;">
+        <button class="ghost" id="backBtn">⬅ Back</button>
+        <button class="primary" id="nextBtn">Next ➜</button>
+      </div>
+
+      <!-- Valentine question Yes/No (No dodges INSIDE its own zone) -->
+      <div class="buttonsRow choice" id="valentineChoice" style="display:none;">
+        <button class="primary" id="valYes">YES 😍</button>
+        <div class="noZone" id="valNoZone">
+          <button class="noBtn" id="valNo">NO 🙃</button>
+        </div>
+      </div>
+
+      <div class="finalBlock" id="finalBlock">
+        <span class="big">Yes, a thousand times yes! 💘</span>
+        <div class="finalMsg">
+          Every year with you has been a gift, and I can't wait for the next sixty.
+          You've kept your promise since 2014, and I’m never letting go of yours either.
+          <b>Happy Valentine’s Day, my forever Sarika!</b>
+        </div>
+        <div class="imgWrap">
+          <!-- Replace this src later with your image path -->
+          <img id="memoryImg" src="image_9779ecf3.png" alt="Our Memory" />
+        </div>
+        <div class="hearts">💗 💖 💘 💞 💝 💓</div>
+      </div>
+
+      <div class="progress" id="progress" style="display:none;"></div>
+    </main>
+  </div>
+
+  <script>
+    // ===== Balloons (DS) =====
+    const sky = document.getElementById("sky");
+    const balloonCount = 18;
+
+    function rand(min, max){ return Math.random() * (max - min) + min; }
+
+    function makeBalloon(){
+      const b = document.createElement("div");
+      b.className = "balloon";
+
+      const shape = document.createElement("div");
+      shape.className = "shape";
+      shape.style.filter = `hue-rotate(${rand(-18, 18)}deg)`;
+
+      const ds = document.createElement("div");
+      ds.className = "ds";
+      ds.textContent = "DS";
+
+      const string = document.createElement("div");
+      string.className = "string";
+
+      b.appendChild(shape);
+      b.appendChild(ds);
+      b.appendChild(string);
+
+      const startX = rand(0, window.innerWidth);
+      const startY = rand(window.innerHeight * 0.25, window.innerHeight + 120);
+      const endX   = startX + rand(-240, 240);
+      const endY   = startY + rand(-520, -1050);
+      const s      = rand(0.75, 1.25);
+      const dur    = rand(9, 18);
+
+      b.style.setProperty("--x0", `${startX}px`);
+      b.style.setProperty("--y0", `${startY}px`);
+      b.style.setProperty("--x1", `${endX}px`);
+      b.style.setProperty("--y1", `${endY}px`);
+      b.style.setProperty("--s", s);
+      b.style.animationDuration = `${dur}s`;
+      b.style.animationDelay = `${rand(0, 7)}s`;
+
+      b.addEventListener("animationiteration", () => {
+        const nx = rand(0, window.innerWidth);
+        const ny = rand(window.innerHeight * 0.7, window.innerHeight + 140);
+        b.style.setProperty("--x0", `${nx}px`);
+        b.style.setProperty("--y0", `${ny}px`);
+        b.style.setProperty("--x1", `${nx + rand(-240, 240)}px`);
+        b.style.setProperty("--y1", `${ny + rand(-520, -1050)}px`);
+      });
+
+      sky.appendChild(b);
+    }
+
+    for (let i=0; i<balloonCount; i++) makeBalloon();
+
+    // ===== Content Steps =====
+    const steps = [
+      {
+        headline: "Sarika,",
+        subtitle:
+`They say the best part about memories is making them, but the second best part is reliving them together.
+Will you take a walk back in time with me?
+Let’s look back at the beautiful path that brought us to today...`
+      },
+      {
+        headline: "The First Spark",
+        subtitle:
+`It all began at Nehru Balodyan in 8th grade. While the world moved on, I stayed frozen in that moment.
+I can still point to the exact spot where you used to sit—it was the first place I ever looked for when I walked into the room.`
+      },
+      {
+        headline: "The Motivation",
+        subtitle:
+`You were always so brilliant, especially with your command of English.
+Just for you, I made a choice that changed my life: I joined coaching classes specifically to learn grammar.
+I didn't care about the rules of the language as much as I cared about understanding the girl who mastered them so effortlessly.`
+      },
+      {
+        headline: "The Grammar Mission",
+        subtitle:
+`I joined those coaching classes. My goal wasn't just to learn; I spent my nights mastering grammar specifically so I could beat you in class.
+I wanted to be the one to solve the problems first, just so you would finally notice me.`
+      },
+      {
+        headline: "A Sip of Magic",
+        subtitle:
+`I still carry the feeling of our first real conversation. You were simply making tea, and though we only spoke for a single minute, that brief moment felt "awesome."
+It was the first time the girl I had been trying so hard to impress finally became a part of my reality.`
+      },
+      {
+        headline: "2014: The Trip of a Lifetime",
+        subtitle:
+`When we started talking in 2014, my world finally opened up.
+That trip to the other branch is a treasure chest of memories. I remember being your personal waiter—bringing you tea and food just to see you smile—and in return, you gave me roses that I’ll never forget.
+The most electric moment was during the dance performance; while everyone else was focused on the stage, we were lost in our own world.
+You continuously stared at me, and I stared back at you, neither of us caring that the whole world was watching. That was the day I knew you were the one.`
+      },
+      {
+        headline: "The Vow (25th December 2014)",
+        subtitle:
+`I remember the hesitation, the moment you weren't sure if we should walk this path together.
+On Christmas Day, 2014, I gave you my word: "If you say yes, I will never leave you."
+I meant it with all my heart that day, and I’ve spent every day since proving it to you.`
+      },
+      {
+        headline: "The Next Sixty Years",
+        subtitle:
+`Twelve years have flown by like a beautiful dream.
+Now, I’m looking at the next 40 to 60 years.
+I see a lifetime of happiness, and I promise you, I am never letting go.`
+      },
+      {
+        headline: "My Everything",
+        subtitle:
+`Sarika, you are my best friend cum life partner.
+There is no one else I’d rather have by my side for the rest of my life.`
+      },
+      {
+        headline: "Will you be my Valentine, Sarika? ❤️",
+        subtitle: `Be honest… but remember the “No” button is cardio-ready.`
+      }
+    ];
+
+    const headlineEl = document.getElementById("headline");
+    const subtitleEl = document.getElementById("subtitle");
+    const panelEl = document.getElementById("panel");
+    const progressEl = document.getElementById("progress");
+
+    const startChoice = document.getElementById("startChoice");
+    const startYes = document.getElementById("startYes");
+    const startNo  = document.getElementById("startNo");
+    const startNoZone = document.getElementById("startNoZone");
+
+    const navRow  = document.getElementById("navRow");
+    const backBtn = document.getElementById("backBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    const valChoice = document.getElementById("valentineChoice");
+    const valYes = document.getElementById("valYes");
+    const valNo  = document.getElementById("valNo");
+    const valNoZone = document.getElementById("valNoZone");
+
+    const finalBlock = document.getElementById("finalBlock");
+
+    let idx = 0;
+    let started = false;
+
+    function showStep(i){
+      idx = i;
+      const s = steps[idx];
+
+      headlineEl.textContent = s.headline;
+      subtitleEl.textContent = "";
+
+      panelEl.style.display = "block";
+      panelEl.innerHTML = `<span class="title">${escapeHtml(s.headline)}</span>${escapeHtml(s.subtitle)}`;
+
+      progressEl.style.display = "block";
+      progressEl.textContent = `Memory ${Math.min(idx+1, steps.length)} of ${steps.length}`;
+
+      backBtn.disabled = (idx === 0);
+
+      const isFinalQuestion = (idx === steps.length - 1);
+
+      if (isFinalQuestion){
+        navRow.style.display = "none";
+        valChoice.style.display = "flex";
+        placeNoCenter(valNoZone, valNo);
+      } else {
+        valChoice.style.display = "none";
+        navRow.style.display = "flex";
+        nextBtn.textContent = "Next ➜";
+      }
+
+      finalBlock.style.display = "none";
+    }
+
+    function startJourney(){
+      started = true;
+      startChoice.style.display = "none";
+      navRow.style.display = "flex";
+      panelEl.style.display = "block";
+      progressEl.style.display = "block";
+      showStep(0);
+    }
+
+    // ===== Dodging NO logic (inside zone only) =====
+    function placeNoCenter(container, noButton){
+      const areaRect = container.getBoundingClientRect();
+      const w = noButton.offsetWidth || 140;
+      const h = noButton.offsetHeight || 48;
+      const x = (areaRect.width - w) / 2;
+      const y = (areaRect.height - h) / 2;
+      noButton.style.left = `${Math.max(0, x)}px`;
+      noButton.style.top  = `${Math.max(0, y)}px`;
+    }
+
+    function moveNoButtonAway(container, noButton, fromX, fromY){
+      const area = container.getBoundingClientRect();
+      const bw = noButton.offsetWidth;
+      const bh = noButton.offsetHeight;
+
+      const current = noButton.getBoundingClientRect();
+      const cx = current.left + current.width/2;
+      const cy = current.top + current.height/2;
+
+      const dx = cx - fromX;
+      const dy = cy - fromY;
+
+      const biasX = dx === 0 ? 0 : (dx/Math.abs(dx)) * rand(70, 130);
+      const biasY = dy === 0 ? 0 : (dy/Math.abs(dy)) * rand(50, 110);
+
+      let nx = rand(0, area.width - bw) + biasX;
+      let ny = rand(0, area.height - bh) + biasY;
+
+      nx = Math.max(0, Math.min(area.width - bw, nx));
+      ny = Math.max(0, Math.min(area.height - bh, ny));
+
+      // Convert page coords to container-local coords
+      const localX = nx;
+      const localY = ny;
+
+      noButton.style.left = `${localX}px`;
+      noButton.style.top  = `${localY}px`;
+    }
+
+    function attachDodger(container, noButton){
+      // Desktop hover
+      noButton.addEventListener("mouseenter", (e) => {
+        moveNoButtonAway(container, noButton, e.clientX, e.clientY);
+      });
+
+      // Mobile tap attempt
+      noButton.addEventListener("touchstart", (e) => {
+        const t = e.touches[0];
+        moveNoButtonAway(container, noButton, t.clientX, t.clientY);
+        e.preventDefault();
+      }, { passive:false });
+
+      // Proximity dodge (desktop)
+      container.addEventListener("mousemove", (e) => {
+        const r = noButton.getBoundingClientRect();
+        const bx = r.left + r.width/2;
+        const by = r.top + r.height/2;
+        const dist = Math.hypot(bx - e.clientX, by - e.clientY);
+        if (dist < 90) moveNoButtonAway(container, noButton, e.clientX, e.clientY);
+      });
+
+      // If clicked somehow: still dodge
+      noButton.addEventListener("click", () => {
+        moveNoButtonAway(container, noButton, window.innerWidth/2, window.innerHeight/2);
+      });
+    }
+
+    attachDodger(startNoZone, startNo);
+    attachDodger(valNoZone, valNo);
+
+    window.addEventListener("load", () => {
+      placeNoCenter(startNoZone, startNo);
+    });
+    window.addEventListener("resize", () => {
+      placeNoCenter(startNoZone, startNo);
+      placeNoCenter(valNoZone, valNo);
+    });
+
+    // Start screen
+    headlineEl.textContent = "💌 A Journey Through Our Memories";
+    subtitleEl.textContent = "Will you take this walk back in time with me?";
+    panelEl.style.display = "none";
+    navRow.style.display = "none";
+    progressEl.style.display = "none";
+
+    // Start YES
+    startYes.addEventListener("click", () => startJourney());
+
+    // Navigation
+    backBtn.addEventListener("click", () => {
+      if (!started) return;
+      showStep(Math.max(0, idx - 1));
+    });
+
+    nextBtn.addEventListener("click", () => {
+      if (!started) return;
+      showStep(Math.min(steps.length - 1, idx + 1));
+    });
+
+    // Final question YES
+    valYes.addEventListener("click", () => {
+      valChoice.style.display = "none";
+      navRow.style.display = "none";
+      progressEl.style.display = "none";
+
+      headlineEl.textContent = "💘";
+      subtitleEl.textContent = "";
+      panelEl.style.display = "none";
+
+      finalBlock.style.display = "block";
+      document.getElementById("card").animate(
+        [{ transform:"scale(1)" }, { transform:"scale(1.02)" }, { transform:"scale(1)"}],
+        { duration: 380, easing: "ease-out" }
+      );
+    });
+
+    // Swipe navigation on mobile (left=next, right=back)
+    let touchStartX = null;
+    document.getElementById("card").addEventListener("touchstart", (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, {passive:true});
+
+    document.getElementById("card").addEventListener("touchend", (e) => {
+      if (touchStartX === null || !started) return;
+      const endX = e.changedTouches[0].clientX;
+      const dx = endX - touchStartX;
+      touchStartX = null;
+
+      const isFinalQuestion = (idx === steps.length - 1);
+      if (finalBlock.style.display === "block") return;
+
+      if (Math.abs(dx) > 60){
+        if (dx < 0 && !isFinalQuestion) showStep(Math.min(steps.length - 1, idx + 1));
+        if (dx > 0) showStep(Math.max(0, idx - 1));
+      }
+    }, {passive:true});
+
+    function escapeHtml(str){
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
